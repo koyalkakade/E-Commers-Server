@@ -4,6 +4,7 @@ const Product = require("../models/productModel");
 const addToCart = async (req, res) => {
     try {
         const { user_id, product_id, quantity } = req.body;
+        // console.log(product_id, quantity, user_id, '?????????????prduct id')
 
         if (!user_id || !product_id || !quantity) {
             return res.status(400).json({
@@ -70,7 +71,7 @@ const addToCart = async (req, res) => {
         );
 
         if (existingProduct) {
-
+            console.log(existingProduct, "existingProduct")
             if (existingProduct.quantity + quantity > product.quantity) {
                 return res.status(400).json({
                     success: false,
@@ -116,8 +117,8 @@ const addToCart = async (req, res) => {
 const getMyCart = async (req, res) => {
     try {
 
-        const { user_id } = req.user.id;
-
+        const user_id = req.user.id;
+        // console.log(user_id,req.user.id)
         const cart = await Cart.findOne({ user_id })
             .populate("products.product_id");
 
@@ -135,6 +136,8 @@ const getMyCart = async (req, res) => {
             data: cart
         });
 
+        // console.log(cart)
+
     } catch (err) {
 
         res.status(500).json({
@@ -150,8 +153,8 @@ const updateCartQuantity = async (req, res) => {
     try {
         const { ID } = req.params;
         const { product_id, quantity } = req.body;
-
-        const cart = await Cart.findOne({ ID });
+        // console.log(req.body,ID)
+        const cart = await Cart.findOne({ user_id: ID });
 
         if (!cart)
             return res.status(404).json({
@@ -191,11 +194,11 @@ const updateCartQuantity = async (req, res) => {
 const removeProductFromCart = async (req, res) => {
 
     try {
-
-        const { user_id, product_id } = req.body;
-
-        const cart = await Cart.findOne({ user_id });
-
+        const id = req.user.id;
+        const { product_id } = req.params;
+        console.log(req.params)
+        const cart = await Cart.findOne({ user_id: id });
+        console.log(cart, 'cart')
         if (!cart)
             return res.status(404).json({
                 success: false,
@@ -215,7 +218,7 @@ const removeProductFromCart = async (req, res) => {
         });
 
     } catch (err) {
-
+        console.error(err);
         res.status(500).json({
             success: false,
             message: err.message
@@ -377,5 +380,5 @@ const getCartTotal = async (req, res) => {
 
 module.exports = {
     addToCart, getMyCart, updateCartQuantity,
-    removeProductFromCart, clearCart, getCartCount,getCartTotal
+    removeProductFromCart, clearCart, getCartCount, getCartTotal
 };

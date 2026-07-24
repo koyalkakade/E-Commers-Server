@@ -5,7 +5,7 @@ const uploadImage = require('../middleware/brandMulter');
 const { createBrand, updateBrand, deleteBrand,getAllBrand } = require("../controllers/brandController");
 
 router.post("/createBrand",auth,admin,uploadImage.single('brandImage'), createBrand);
-router.get("/getAllBrand",auth,admin,getAllBrand)
+router.get("/getAllBrand",auth,getAllBrand)
 router.put('/updateBrand/:ID',auth,admin,uploadImage.single('brandImage'), updateBrand)
 router.delete("/deleteBrand/:ID",auth,admin,deleteBrand)
 

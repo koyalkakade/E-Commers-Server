@@ -1,12 +1,12 @@
 const Cart = require("../models/cartModel");
 const Product = require("../models/productModel");
 const Order = require("../models/orderModel");
+const User = require("../models/userModel")
 
 const placeOrder = async (req, res) => {
     try {
-
+        const user_id = req.user.id;
         const {
-            user_id,
             shippingAddress,
             paymentMethod
         } = req.body;
@@ -156,8 +156,8 @@ const placeOrder = async (req, res) => {
 
 const getMyOrders = async (req, res) => {
     try {
-        const { user_id } = req.params;
-
+        const user_id = req.user.id;
+        // console.log(user_id)
         const orders = await Order.find({ user_id })
             .populate("user_id", "name email mobile")
             .populate("products.vendor_id", "name email mobile")
@@ -167,7 +167,7 @@ const getMyOrders = async (req, res) => {
             success: true,
             totalOrders: orders.length,
             message: "Orders fetched successfully.",
-            data: orders,
+            orders: orders,
         });
 
     } catch (error) {
@@ -293,13 +293,13 @@ const updateOrderStatus = async (req, res) => {
 
         const { id } = req.params;
         const { orderStatus } = req.body;
-
+        console.log(id, orderStatus)
         const allowedStatus = [
             "placed",
             "confirmed",
             "processing",
             "shipped",
-            "out_for_delivery",
+            // "out_for_delivery",
             "delivered",
             "cancelled"
         ];
@@ -335,8 +335,9 @@ const updateOrderStatus = async (req, res) => {
             placed: "confirmed",
             confirmed: "processing",
             processing: "shipped",
-            shipped: "out_for_delivery",
-            out_for_delivery: "delivered"
+             shipped: "delivered",
+            // shipped: "out_for_delivery",
+            // out_for_delivery: "delivered"
         };
 
         // Allow cancellation before shipping
@@ -375,7 +376,7 @@ const updateOrderStatus = async (req, res) => {
         } else {
 
             const nextStatus = statusFlow[order.orderStatus];
-
+            console.log(nextStatus, 'nextStatus')
             if (nextStatus !== orderStatus) {
 
                 return res.status(400).json({
@@ -423,7 +424,7 @@ const updateOrderStatus = async (req, res) => {
 const getVendorOrders = async (req, res) => {
     try {
 
-        const { vendorId } = req.params;
+        const vendorId = req.user.id;
 
         const orders = await Order.find({
             "products.vendor_id": vendorId
@@ -727,28 +728,28 @@ const getTodayOrders = async (req, res) => {
     try {
 
         const start = new Date();
-        start.setHours(0,0,0,0);
+        start.setHours(0, 0, 0, 0);
 
         const end = new Date();
-        end.setHours(23,59,59,999);
+        end.setHours(23, 59, 59, 999);
 
         const total = await Order.countDocuments({
-            createdAt:{
-                $gte:start,
-                $lte:end
+            createdAt: {
+                $gte: start,
+                $lte: end
             }
         });
 
         res.json({
-            success:true,
-            todayOrders:total
+            success: true,
+            todayOrders: total
         });
 
-    } catch(err){
+    } catch (err) {
 
         res.status(500).json({
-            success:false,
-            message:err.message
+            success: false,
+            message: err.message
         });
 
     }
@@ -762,52 +763,52 @@ const getMonthlySales = async (req, res) => {
         const data = await Order.aggregate([
 
             {
-                $match:{
-                    orderStatus:"delivered"
+                $match: {
+                    orderStatus: "delivered"
                 }
             },
 
             {
-                $group:{
-                    _id:{
-                        year:{
-                            $year:"$createdAt"
+                $group: {
+                    _id: {
+                        year: {
+                            $year: "$createdAt"
                         },
-                        month:{
-                            $month:"$createdAt"
+                        month: {
+                            $month: "$createdAt"
                         }
                     },
 
-                    sales:{
-                        $sum:"$totalAmount"
+                    sales: {
+                        $sum: "$totalAmount"
                     },
 
-                    totalOrders:{
-                        $sum:1
+                    totalOrders: {
+                        $sum: 1
                     }
 
                 }
             },
 
             {
-                $sort:{
-                    "_id.year":1,
-                    "_id.month":1
+                $sort: {
+                    "_id.year": 1,
+                    "_id.month": 1
                 }
             }
 
         ]);
 
         res.json({
-            success:true,
+            success: true,
             data
         });
 
-    } catch(err){
+    } catch (err) {
 
         res.status(500).json({
-            success:false,
-            message:err.message
+            success: false,
+            message: err.message
         });
 
     }
@@ -821,30 +822,30 @@ const getTopSellingProducts = async (req, res) => {
         const products = await Order.aggregate([
 
             {
-                $match:{
-                    orderStatus:"delivered"
+                $match: {
+                    orderStatus: "delivered"
                 }
             },
 
             {
-                $unwind:"$products"
+                $unwind: "$products"
             },
 
             {
-                $group:{
+                $group: {
 
-                    _id:"$products.product_id",
+                    _id: "$products.product_id",
 
-                    productName:{
-                        $first:"$products.productName"
+                    productName: {
+                        $first: "$products.productName"
                     },
 
-                    image:{
-                        $first:"$products.productImage"
+                    image: {
+                        $first: "$products.productImage"
                     },
 
-                    sold:{
-                        $sum:"$products.quantity"
+                    sold: {
+                        $sum: "$products.quantity"
                     }
 
                 }
@@ -852,38 +853,222 @@ const getTopSellingProducts = async (req, res) => {
             },
 
             {
-                $sort:{
-                    sold:-1
+                $sort: {
+                    sold: -1
                 }
             },
 
             {
-                $limit:10
+                $limit: 10
             }
 
         ]);
 
         res.json({
-            success:true,
-            data:products
+            success: true,
+            data: products
         });
 
-    } catch(err){
+    } catch (err) {
 
         res.status(500).json({
-            success:false,
-            message:err.message
+            success: false,
+            message: err.message
         });
 
     }
 
 };
 
+const dashboard = async (req, res) => {
+    try {
+        const totalCustomers = await User.countDocuments({
+            role: "Customer",
+        });
+        // console.log(totalCustomers, 'totalCustomers')
+
+        const totalProducts =
+            await Product.countDocuments();
+
+        const totalOrders =
+            await Order.countDocuments();
+
+        const orders = await Order.find();
+
+        const totalRevenue = orders.reduce(
+            (sum, order) => sum + order.totalAmount,
+            0
+        );
+
+        const recentOrders = await Order.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .populate("user_id", "name");
+
+        const latestCustomers = await User.find({
+            role: "customer",
+        })
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        return res.status(200).json({
+            success: true,
+            message: "Orders fetched successfully.",
+            totalCustomers,
+            totalProducts,
+            totalOrders,
+            totalRevenue,
+
+            pendingOrders: await Order.countDocuments({
+                orderStatus: "placed",
+            }),
+
+            processingOrders:
+                await Order.countDocuments({
+                    orderStatus: "processing",
+                }),
+
+            shippedOrders:
+                await Order.countDocuments({
+                    orderStatus: "shipped",
+                }),
+
+            deliveredOrders:
+                await Order.countDocuments({
+                    orderStatus: "delivered",
+                }),
+
+            cancelledOrders:
+                await Order.countDocuments({
+                    orderStatus: "cancelled",
+                }),
+
+            recentOrders,
+
+            latestCustomers,
+        });
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+};
+
+const vendorDashboard = async (req, res) => {
+    try {
+        const vendorId = req.user.id;
+
+        // Total Products
+        const totalProducts = await Product.countDocuments({
+            vendor_id: vendorId,
+        });
+
+        // Vendor Orders
+        const orders = await Order.find({
+            "products.vendor_id": vendorId,
+        })
+            .populate("user_id", "name email")
+            .populate("products.product_id");
+
+        let totalRevenue = 0;
+        let totalOrders = 0;
+
+        let pendingOrders = 0;
+        let processingOrders = 0;
+        let shippedOrders = 0;
+        let deliveredOrders = 0;
+        let cancelledOrders = 0;
+
+        let totalRating = 0;
+        let totalReviews = 0;
+
+        orders.forEach((order) => {
+            totalOrders++;
+
+            if (order.orderStatus === "placed") pendingOrders++;
+            if (order.orderStatus === "processing") processingOrders++;
+            if (order.orderStatus === "shipped") shippedOrders++;
+            if (order.orderStatus === "delivered") deliveredOrders++;
+            if (order.orderStatus === "cancelled") cancelledOrders++;
+
+            order.products.forEach((item) => {
+                if (
+                    item.vendor_id.toString() === vendorId.toString()
+                ) {
+                    totalRevenue +=
+                        item.quantity * item.finalPrice;
+                }
+            });
+        });
+
+        // Vendor Products Rating
+        const products = await Product.find({
+            vendor_id: vendorId,
+        });
+
+        products.forEach((product) => {
+            product.reviews.forEach((review) => {
+                totalRating += review.rating;
+                totalReviews++;
+            });
+        });
+
+        const averageRating =
+            totalReviews === 0
+                ? 0
+                : Number(
+                    (totalRating / totalReviews).toFixed(1)
+                );
+
+        const recentOrders = orders
+            .sort(
+                (a, b) =>
+                    new Date(b.createdAt) -
+                    new Date(a.createdAt)
+            )
+            .slice(0, 5);
+
+        res.status(200).json({
+            success: true,
+
+            totalProducts,
+
+            totalOrders,
+
+            totalRevenue,
+
+            averageRating,
+
+            pendingOrders,
+
+            processingOrders,
+
+            shippedOrders,
+
+            deliveredOrders,
+
+            cancelledOrders,
+
+            recentOrders,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
+};
+
 module.exports = {
-    placeOrder,getMyOrders,getOrderById,getAllOrders,
-    updateOrderStatus,getVendorOrders,cancelOrder,
-    getTotalOrders,getTotalRevenue,getPendingOrders,
-    getProcessingOrders,getShippedOrders,getDeliveredOrders,
-    getCancelledOrders,getTodayOrders,getMonthlySales,
-    getTopSellingProducts
+    placeOrder, getMyOrders, getOrderById, getAllOrders,
+    updateOrderStatus, getVendorOrders, cancelOrder,
+    getTotalOrders, getTotalRevenue, getPendingOrders,
+    getProcessingOrders, getShippedOrders, getDeliveredOrders,
+    getCancelledOrders, getTodayOrders, getMonthlySales,
+    getTopSellingProducts, dashboard,vendorDashboard
 };

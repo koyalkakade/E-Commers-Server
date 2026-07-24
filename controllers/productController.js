@@ -137,7 +137,9 @@ const getProductById = async (req, res) => {
             .populate("brandId", "brandName")
             .populate("createdBy", "name email")
             .populate("updatedBy", "name email")
-            .populate("reviews.user_id", "name email");
+            .populate("reviews.user_id", "name email'");
+
+            // console.log(product)
 
         if (!product) {
             return res.status(404).json({
@@ -436,8 +438,10 @@ const addReview = async (req, res) => {
     try {
 
         const { productId } = req.params;
+        const user_id = req.user.id;
+        const { rating, comment } = req.body.reviewData;
 
-        const { user_id, rating, comment } = req.body;
+        // console.log(productId,user_id,rating, comment)
 
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return res.status(400).json({
@@ -475,6 +479,7 @@ const addReview = async (req, res) => {
                 message: "You can review only delivered products."
             });
         }
+// console.log('//////////',ordered)
 
         // Check duplicate review
         const alreadyReviewed = product.reviews.find(

@@ -10,7 +10,7 @@ router.post("/addToCart", auth, addToCart);
 router.get("/getMyCart", auth, getMyCart)
 router.get("/getCartCount", auth, getCartCount)
 router.put('/updateCartQuantity/:ID', auth, updateCartQuantity)
-router.delete("/removeProductFromCart", auth, removeProductFromCart)
+router.delete("/removeProductFromCart/:product_id", auth, removeProductFromCart)
 router.delete("/clearCart/:user_id", auth, clearCart)
 router.get("/getCartTotal", auth, getCartTotal)
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { auth,admin } = require('../middleware/auth');
+const { auth,admin,vendor } = require('../middleware/auth');
 const { placeOrder, getMyOrders, getOrderById, 
     cancelOrder, getAllOrders, updateOrderStatus, 
     getVendorOrders,
@@ -13,11 +13,13 @@ const { placeOrder, getMyOrders, getOrderById,
     getCancelledOrders,
     getTodayOrders,
     getMonthlySales,
-    getTopSellingProducts} = require("../controllers/orderController");
+    getTopSellingProducts,
+    dashboard,
+    vendorDashboard} = require("../controllers/orderController");
 
 
 router.post("/placeOrder", auth, placeOrder);
-router.get("/getMyOrders/:user_id",auth, getMyOrders);
+router.get("/getMyOrders",auth, getMyOrders);
 router.get("/getOrderById/:id",auth, getOrderById);
 router.get("/getAllOrders",auth, getAllOrders);
 router.put("/updateOrderStatus/:id",auth, updateOrderStatus);
@@ -34,6 +36,8 @@ router.get("/getCancelledOrders",auth,admin, getCancelledOrders);
 router.get("/getTodayOrders",auth,admin, getTodayOrders);
 router.get("/getMonthlySales",auth,admin, getMonthlySales);
 router.get("/getTopSellingProducts",auth,admin, getTopSellingProducts);
+router.get("/dashboard",auth,admin, dashboard);
+router.get("/vendorDashboard",auth,vendor, vendorDashboard);
 
 
 module.exports = router;
